@@ -318,7 +318,7 @@
     <div class="bestseller-carousel">
       <div class="carousel-track" [style.transform]="'translateX(-' + (activeSlide * 100) + '%)'">
         <div class="carousel-slide" *ngFor="let car of bestSellers">
-          <img [src]="car.image.startsWith('http') ? car.image : storageUrl+'/'+car.image" [alt]="car.name" />
+          <img [src]="car.image.startsWith('http') ? car.image : car.image" [alt]="car.name" />
           <div class="slide-caption">
             <span class="slide-name">{{ car.name }}</span>
             <span class="slide-price">{{ car.price | number }} CFA</span>

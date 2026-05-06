@@ -240,7 +240,7 @@ loadCars(): void {
   }
 
   getImageUrl(image: string): string {
-  return `http://localhost:8000/storage/${image}`;
+  return `${image}`;
 }
   // ── Scroll ──────────────────────────────────────────
   @HostListener('window:scroll', [])

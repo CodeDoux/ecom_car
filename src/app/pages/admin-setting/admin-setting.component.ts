@@ -48,7 +48,7 @@ storageUrl = environment.storageUrl;
 
   this.http.post<any>(`${this.API}/upload`, formData).subscribe({
     next: (res) => {
-      setting.value = this.storageUrl+'/'+res.url; // ← l'API retourne l'URL de l'image uploadée
+      setting.value = res.url; // ← l'API retourne l'URL de l'image uploadée
     },
     error: () => this.showToast('Erreur lors de l\'upload.', 'error')
   });
