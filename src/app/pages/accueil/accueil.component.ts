@@ -229,6 +229,7 @@ loadCars(): void {
     next: (data) => {
       this.allCars      = data;
       this.filteredCars = data.slice(0, 6); // ← seulement 6 voitures
+      console.log(this.filteredCars);
       this.buildFilterOptions();
     },
     error: () => this.showToast('Erreur lors du chargement.', 'error')
