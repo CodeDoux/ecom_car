@@ -205,6 +205,7 @@ goToSlide(index: number): void {
       
       this.settingService.load().subscribe(() => {
     this.settings = this.settingService['settingsSubject'].getValue();
+    console.log(this.settings);
     this.loadBestSellersFromSettings();
   });
   
