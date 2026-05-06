@@ -1,4 +1,5 @@
 {
+  "buildCommand": "ng build --configuration=production",
   "outputDirectory": "dist/ecom_car/browser",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
