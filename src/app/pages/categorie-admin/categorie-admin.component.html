@@ -1,0 +1,316 @@
+<!-- Page header -->
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Gestion des Catégories</h1>
+    <p class="page-sub">{{ categories.length }} catégorie{{ categories.length > 1 ? 's' : '' }} au total</p>
+  </div>
+  <button class="btn-add" (click)="openModal('add')">
+    <i class="fa-solid fa-plus"></i>
+    Nouvelle catégorie
+  </button>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <input type="text" placeholder="Rechercher une catégorie..."
+      [(ngModel)]="searchQuery" (input)="applyFilters()" />
+    <button class="btn-clear" *ngIf="searchQuery" (click)="searchQuery=''; applyFilters()">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <div class="toolbar-right">
+    <div class="select-wrap">
+      <select [(ngModel)]="sortBy" (change)="applyFilters()">
+        <option value="default">Trier par</option>
+        <option value="name">Nom A–Z</option>
+        <option value="count-desc">Plus de véhicules</option>
+        <option value="count-asc">Moins de véhicules</option>
+      </select>
+      <i class="fa-solid fa-chevron-down"></i>
+    </div>
+
+    <div class="view-toggle">
+      <button [class.active]="viewMode === 'grid'"  (click)="viewMode = 'grid'">
+        <i class="fa-solid fa-grip"></i>
+      </button>
+      <button [class.active]="viewMode === 'table'" (click)="viewMode = 'table'">
+        <i class="fa-solid fa-table-list"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== GRID VIEW ===== -->
+<div class="cat-grid" *ngIf="viewMode === 'grid'">
+
+  <!-- Card ajouter -->
+  <div class="cat-card cat-card--add" (click)="openModal('add')">
+    <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
+    <span>Nouvelle catégorie</span>
+  </div>
+
+  <!-- Cards catégories -->
+  <div class="cat-card" *ngFor="let cat of filteredCategories">
+    <div class="cat-card-header">
+      <!--<div class="cat-icon-wrap" [style.background]="cat.color + '20'" [style.color]="cat.color">
+        <i class="fa-solid" [ngClass]="cat.icon"></i>
+      </div>-->
+      <div class="cat-card-actions">
+        <button class="btn-action blue" (click)="openModal('edit', cat)" title="Modifier">
+          <i class="fa-solid fa-pen"></i>
+        </button>
+        <button class="btn-action red" (click)="confirmDelete(cat)" title="Supprimer">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </div>
+    </div>
+
+    <h3 class="cat-name">{{ cat.name }}</h3>
+    <p class="cat-desc">{{ cat.description || 'Aucune description' }}</p>
+
+    <div class="cat-footer">
+      <div class="cat-stat">
+        <span class="stat-val">7</span>
+        <span class="stat-lbl">véhicules</span>
+      </div>
+      <div class="cat-stat">
+        <span class="stat-val" >
+          <i class="fa-solid fa-circle"></i>
+        </span>
+        <span class="stat-lbl">Actif</span>
+      </div>
+      <div class="cat-slug">
+        <i class="fa-solid fa-link"></i>
+        {{ cat.name }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty -->
+  <div class="empty-state" *ngIf="filteredCategories.length === 0">
+    <i class="fa-solid fa-layer-group"></i>
+    <p>Aucune catégorie trouvée</p>
+  </div>
+</div>
+
+<!-- ===== TABLE VIEW ===== -->
+<div class="table-card" *ngIf="viewMode === 'table'">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Icône</th>
+          <th>Nom</th>
+          <th>Slug</th>
+          <th>Description</th>
+          <th>Véhicules</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let cat of filteredCategories">
+          <td>
+            <!--<div class="cat-icon-wrap sm" [style.background]="cat.color + '20'" [style.color]="cat.color">
+              <i class="fa-solid" [ngClass]="cat.icon"></i>
+            </div>-->
+             <div class="cat-icon-wrap sm" >
+              <i class="fa-solid" ></i>
+            </div>
+          </td>
+          <td>
+            <span class="cat-name-cell">{{ cat.name }}</span>
+          </td>
+          <td>
+            <span class="slug-badge">{{ cat.name }}</span>
+          </td>
+          <td class="text-muted desc-cell">{{ cat.description || '—' }}</td>
+          <td>
+            <span class="count-badge">8</span>
+          </td>
+          <td>
+            <label class="toggle-switch">
+              <input type="checkbox" [checked]="cat.active" (change)="toggleActive(cat)" />
+              <span class="toggle-track">
+                <span class="toggle-thumb"></span>
+              </span>
+            </label>
+          </td>
+          <td>
+            <div class="action-btns">
+              <button class="btn-action blue" (click)="openModal('edit', cat)">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button class="btn-action red" (click)="confirmDelete(cat)">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-state" *ngIf="filteredCategories.length === 0">
+      <i class="fa-solid fa-layer-group"></i>
+      <p>Aucune catégorie trouvée</p>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     MODAL AJOUTER / MODIFIER
+================================================================ -->
+<div class="modal-overlay" [class.open]="showModal" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <h2>{{ modalMode === 'add' ? 'Nouvelle catégorie' : 'Modifier la catégorie' }}</h2>
+      <button class="modal-close" (click)="closeModal()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <form (ngSubmit)="onSave()">
+        <!-- Nom -->
+        <div class="form-field">
+          <label>Nom de la catégorie *</label>
+          <input type="text" placeholder="Ex: SUV"
+            [(ngModel)]="modalForm['name']" name="name"
+            [class.error]="formErrors['name']"
+            (input)="generateSlug()" />
+          <span class="err" *ngIf="formErrors['name']">{{ formErrors['name'] }}</span>
+        </div>
+
+        <!-- Slug -->
+        <div class="form-field">
+          <label>Slug (URL)</label>
+          <div class="input-with-prefix">
+            <span class="prefix">/categories/</span>
+            <input type="text" placeholder="suv"
+              [(ngModel)]="modalForm['slug']" name="slug" />
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-field">
+          <label>Description</label>
+          <textarea placeholder="Décrivez cette catégorie..."
+            [(ngModel)]="modalForm['description']" name="description"
+            rows="3"></textarea>
+        </div>
+
+        <!-- Icône + Couleur -->
+        <div class="form-row">
+          <div class="form-field">
+            <label>Icône FontAwesome *</label>
+            <div class="icon-selector">
+              <div class="icon-preview" [style.color]="modalForm['color']">
+                <i class="fa-solid" [ngClass]="modalForm['icon'] || 'fa-layer-group'"></i>
+              </div>
+              <div class="select-wrap flex-1">
+                <select [(ngModel)]="modalForm['icon']" name="icon">
+                  <option *ngFor="let ic of iconOptions" [value]="ic.value">{{ ic.label }}</option>
+                </select>
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label>Couleur</label>
+            <div class="color-picker-wrap">
+              <input type="color" [(ngModel)]="modalForm['color']" name="color" class="color-input" />
+              <div class="color-presets">
+                <button type="button" *ngFor="let c of colorPresets"
+                  class="color-dot"
+                  [style.background]="c"
+                  [class.active]="modalForm['color'] === c"
+                  (click)="modalForm['color'] = c">
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Statut -->
+        <div class="form-field">
+          <label>Statut</label>
+          <div class="status-toggle-row">
+            <label class="toggle-switch">
+              <input type="checkbox" [(ngModel)]="modalForm['active']" name="active" />
+              <span class="toggle-track">
+                <span class="toggle-thumb"></span>
+              </span>
+            </label>
+            <span class="toggle-label">{{ modalForm['active'] ? 'Catégorie active' : 'Catégorie inactive' }}</span>
+          </div>
+        </div>
+
+        <!-- Aperçu -->
+        <div class="preview-card">
+          <p class="preview-title">Aperçu</p>
+          <div class="preview-body">
+            <div class="cat-icon-wrap" [style.background]="modalForm['color'] + '20'" [style.color]="modalForm['color']">
+              <i class="fa-solid" [ngClass]="modalForm['icon'] || 'fa-layer-group'"></i>
+            </div>
+            <div>
+              <span class="cat-name">{{ modalForm['name'] || 'Nom catégorie' }}</span>
+              <span class="cat-desc">{{ modalForm['description'] || 'Description...' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="closeModal()">Annuler</button>
+          <button type="submit" class="btn-save" [class.loading]="isSaving">
+            <span *ngIf="!isSaving">
+              <i class="fa-solid fa-floppy-disk"></i>
+              {{ modalMode === 'add' ? 'Créer' : 'Enregistrer' }}
+            </span>
+            <span *ngIf="isSaving" class="spinner"></span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     MODAL SUPPRESSION
+================================================================ -->
+<div class="modal-overlay" [class.open]="showDeleteModal" (click)="showDeleteModal = false">
+  <div class="modal modal--sm" (click)="$event.stopPropagation()">
+    <div class="delete-modal-body">
+      <div class="delete-icon">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h3>Supprimer cette catégorie ?</h3>
+      <p>
+        Vous allez supprimer <strong>{{ catToDelete?.name }}</strong>.
+       <!-- <span *ngIf="catToDelete && catToDelete.carCount > 0" class="warn-text">
+          <br/>⚠️ {{ catToDelete.carCount }} véhicule(s) sont liés à cette catégorie.
+        </span>-->
+      </p>
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="showDeleteModal = false">Annuler</button>
+        <button class="btn-delete-confirm" (click)="deleteCategory()" [class.loading]="isDeleting">
+          <span *ngIf="!isDeleting"><i class="fa-solid fa-trash"></i> Supprimer</span>
+          <span *ngIf="isDeleting" class="spinner"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" [class.show]="toast.show" [ngClass]="toast.type">
+  <i class="fa-solid"
+    [class.fa-circle-check]="toast.type === 'success'"
+    [class.fa-circle-exclamation]="toast.type === 'error'"></i>
+  {{ toast.message }}
+</div>

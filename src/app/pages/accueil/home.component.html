@@ -1,0 +1,179 @@
+<!-- ===== TOP BAR ===== -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.39 19a19.45 19.45 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      {{ settings['contact_phone1'] || '(+221) 77-302-11-01' }}
+    /
+    {{ settings['contact_phone2'] || '78-777-66-55' }}
+    </span>
+    <span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+{{ settings['contact_email1'] || 'sarrcodou98@mail.com' }}
+    </span>
+  </div>
+  <div class="topbar-right">
+    <div class="footer-socials">
+      <a [href]="settings['social_facebook'] || '#'" aria-label="Facebook" class="social-link"><i class="fab fa-facebook"></i></a>
+      <a [href]="settings['social_instagram'] || '#'" aria-label="Instagram" class="social-link"><i class="fab fa-instagram"></i></a>
+      <a [href]="settings['social_tiktok'] || '#'" aria-label="Tiktok" class="social-link"><i class="fab fa-tiktok"></i></a>
+    </div>
+  </div>
+</div>
+
+<!-- ===== OVERLAY (en dehors de navbar) ===== -->
+<div class="mobile-menu-overlay" [class.open]="mobileMenuOpen" (click)="toggleMobileMenu()"></div>
+
+<!-- ===== DRAWER (en dehors de navbar) ===== -->
+<div class="mobile-menu" [class.open]="mobileMenuOpen">
+  <div class="mobile-menu-logo">
+  <img src="images/logo.png" alt="ABK AUTO" class="mobile-logo-img" />
+  </div>
+
+  <a routerLink="/home"
+   routerLinkActive="active"
+   [routerLinkActiveOptions]="{exact:true}"
+   class="mobile-nav-link"
+   (click)="toggleMobileMenu()">
+    <i class="fa-solid fa-house"></i> Accueil
+  </a>
+  <a routerLink="/home/all-cars"
+   routerLinkActive="active"
+   class="mobile-nav-link"
+   (click)="toggleMobileMenu()">
+    <i class="fa-solid fa-car"></i> Véhicules
+  </a>
+  <a routerLink="/home/pieces"   routerLinkActive="active" class="mobile-nav-link" (click)="toggleMobileMenu()">
+    <i class="fa-solid fa-gears"></i> Pièces
+  </a>
+  <a routerLink="/home/contact"
+   routerLinkActive="active"
+   class="mobile-nav-link"
+   (click)="toggleMobileMenu()">
+    <i class="fa-solid fa-phone"></i> Contact
+  </a>
+
+  <div class="mobile-menu-divider"></div>
+
+  <div class="mobile-menu-actions">
+    <!-- Non connecté -->
+    <ng-container *ngIf="!isLoggedIn">
+      <a routerLink="/login"    class="mobile-btn-login"    (click)="toggleMobileMenu()">
+        <i class="fa-solid fa-right-to-bracket"></i> Connexion
+      </a>
+      <a routerLink="/register" class="mobile-btn-register" (click)="toggleMobileMenu()">
+        <i class="fa-solid fa-user-plus"></i> Créer un compte
+      </a>
+    </ng-container>
+
+    <!-- Connecté -->
+    <ng-container *ngIf="isLoggedIn">
+      <div class="mobile-user-info">
+        <div class="mobile-avatar">
+          {{ currentUser?.firstName?.charAt(0) | uppercase }}
+        </div>
+        <div>
+          <div class="mobile-user-name">{{ currentUser?.nomComplet }}</div>
+          <div class="mobile-user-role">{{ currentUser?.role }}</div>
+        </div>
+      </div>
+      <button class="mobile-btn-logout" (click)="logout(); toggleMobileMenu()">
+        <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+      </button>
+    </ng-container>
+  </div>
+</div>
+
+<!-- ===== NAVBAR ===== -->
+<nav class="navbar" [class.scrolled]="isScrolled">
+  <div class="navbar-container">
+
+    <!-- Logo -->
+    <div class="logo">
+      <span class="logo-motor">ABK</span><span class="logo-x">AUTO</span>
+    </div>
+
+    <!-- Nav Links desktop -->
+    <ul class="nav-links">
+      <li routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">
+        <a routerLink="/home" class="nav-link">Accueil</a>
+      </li>
+      <li routerLinkActive="active">
+        <a routerLink="/home/all-cars" class="nav-link">Véhicules</a>
+      </li>
+      <li routerLinkActive="active">
+        <a class="nav-link">Pièces</a>
+      </li>
+      <li routerLinkActive="active">
+        <a routerLink="/home/contact" class="nav-link">Contact</a>
+      </li>
+    </ul>
+
+    <!-- Actions desktop -->
+    <div class="nav-actions">
+      <ng-container *ngIf="!isLoggedIn">
+        <a routerLink="/login" class="btn-nav-login">
+          <i class="fa-solid fa-right-to-bracket"></i> Connexion
+        </a>
+        <a routerLink="/register" class="btn-nav-register">
+          Créer un compte
+        </a>
+      </ng-container>
+
+      <ng-container *ngIf="isLoggedIn">
+        <div class="nav-user" (click)="toggleUserMenu()" [class.open]="userMenuOpen">
+          <div class="nav-avatar">
+            {{ currentUser?.firstName?.charAt(0) | uppercase }}
+          </div>
+          <span class="nav-username">{{ currentUser?.firstName }}</span>
+          <i class="fa-solid fa-chevron-down nav-chevron"></i>
+          <div class="nav-user-dropdown">
+            <a routerLink="/profile" class="dropdown-item">
+              <i class="fa-solid fa-user"></i> Mon profil
+            </a>
+            <a routerLink="/favorites" class="dropdown-item">
+              <i class="fa-regular fa-heart"></i> Mes favoris
+            </a>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item danger" (click)="logout()">
+              <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+            </button>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Hamburger -->
+    <button class="hamburger" [class.open]="mobileMenuOpen" (click)="toggleMobileMenu()">
+      <span></span><span></span><span></span>
+    </button>
+
+  </div>
+</nav>
+
+<!-- ===== CONTENT ===== -->
+<div class="content">
+  <router-outlet></router-outlet>
+  <a href="https://wa.me/221787776655" target="_blank" class="whatsapp-btn" aria-label="WhatsApp">
+  <i class="fa-brands fa-whatsapp"></i>
+</a>
+</div>
+<!-- WhatsApp fixe -->
+
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <div class="footer-container">
+    <div class="footer-logo">ABK<span>AUTO</span></div>
+    <div class="footer-socials">
+      <a [href]="settings['social_facebook'] || '#'" aria-label="Facebook" class="social-link"><i class="fab fa-facebook"></i></a>
+      <a [href]="settings['social_instagram'] || '#'" class="social-link"><i class="fab fa-instagram"></i></a>
+      <a [href]="settings['social_tiktok'] || '#'" aria-label="Tiktok" class="social-link"><i class="fab fa-tiktok"></i></a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2024 ABK AUTO Premium Car. All rights reserved.</p>
+  </div>
+</footer>
+
+

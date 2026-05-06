@@ -1,0 +1,77 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Paramètres du site</h1>
+    <p class="page-sub">Modifiez le contenu du site sans toucher au code</p>
+  </div>
+  <button class="btn-save-all" (click)="save()" [class.loading]="isSaving">
+    <span *ngIf="!isSaving"><i class="fa-solid fa-floppy-disk"></i> Enregistrer tout</span>
+    <span *ngIf="isSaving" class="spinner"></span>
+  </button>
+</div>
+
+<div class="settings-layout">
+
+  <!-- Sidebar groupes -->
+  <aside class="settings-sidebar">
+    <button class="group-btn"
+      *ngFor="let key of objectKeys(groupLabels)"
+      [class.active]="activeGroup === key"
+      (click)="activeGroup = key">
+      <i class="fa-solid" [ngClass]="groupLabels[key].icon"></i>
+      {{ groupLabels[key].label }}
+    </button>
+  </aside>
+
+  <!-- Formulaire -->
+  <div class="settings-content">
+    <div class="settings-group-title">
+      <i class="fa-solid" [ngClass]="groupLabels[activeGroup].icon"></i>
+      {{ groupLabels[activeGroup].label }}
+    </div>
+
+    <div class="settings-fields">
+      <div class="setting-field" *ngFor="let s of currentSettings">
+        <label>{{ s.label }}</label>
+
+        <!-- Text -->
+        <input *ngIf="s.type === 'text' || s.type === 'url'"
+          type="text" [(ngModel)]="s.value"
+          [placeholder]="s.label" />
+
+        <!-- Textarea -->
+        <textarea *ngIf="s.type === 'textarea'"
+          [(ngModel)]="s.value"
+          [placeholder]="s.label"
+          rows="3"></textarea>
+
+        <!-- Image -->
+        <div *ngIf="s.type === 'image'" class="image-field">
+          <input type="text" [(ngModel)]="s.value" placeholder="URL de l'image" />
+
+          <!-- Preview -->
+          <div class="image-preview" *ngIf="s.value">
+            <img [src]="s.value" [alt]="s.label"
+              (error)="$any($event.target).style.display='none'" />
+          </div>
+
+          <!-- Upload fichier -->
+          <label class="btn-upload">
+            <i class="fa-solid fa-upload"></i> Choisir une image
+            <input type="file" accept="image/*" (change)="onImageUpload($event, s)" hidden />
+          </label>
+        </div>
+
+        <span class="field-key">{{ s.key }}</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" [class.show]="toast.show" [ngClass]="toast.type">
+  <i class="fa-solid"
+    [class.fa-circle-check]="toast.type === 'success'"
+    [class.fa-circle-exclamation]="toast.type === 'error'"></i>
+  {{ toast.message }}
+</div>

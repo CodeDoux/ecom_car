@@ -1,0 +1,316 @@
+<!-- Page header -->
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Gestion des Commandes</h1>
+    <p class="page-sub">{{ filteredCommandes.length }} commande{{ filteredCommandes.length > 1 ? 's' : '' }} au total</p>
+  </div>
+</div>
+
+<!-- Stats rapides -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fa-solid fa-cart-shopping"></i></div>
+    <div>
+      <p class="stat-val">{{ getCount('en_cours') }}</p>
+      <p class="stat-lbl">En cours</p>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+    <div>
+      <p class="stat-val">{{ getCount('confirmee') }}</p>
+      <p class="stat-lbl">Confirmées</p>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon amber"><i class="fa-solid fa-truck"></i></div>
+    <div>
+      <p class="stat-val">{{ getCount('livree') }}</p>
+      <p class="stat-lbl">Livrées</p>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon red"><i class="fa-solid fa-xmark"></i></div>
+    <div>
+      <p class="stat-val">{{ getCount('annulee') }}</p>
+      <p class="stat-lbl">Annulées</p>
+    </div>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <input type="text" placeholder="Rechercher par client, ID..."
+      [(ngModel)]="searchQuery" (input)="applyFilters()" />
+    <button class="btn-clear" *ngIf="searchQuery" (click)="searchQuery=''; applyFilters()">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <div class="toolbar-right">
+    <!-- Filtre statut -->
+    <div class="filter-tabs">
+      <button class="ftab" [class.active]="statusFilter === ''"          (click)="setStatus('')">Tous</button>
+      <button class="ftab" [class.active]="statusFilter === 'en_cours'"  (click)="setStatus('en_cours')">En cours</button>
+      <button class="ftab" [class.active]="statusFilter === 'confirmee'" (click)="setStatus('confirmee')">Confirmées</button>
+      <button class="ftab" [class.active]="statusFilter === 'livree'"    (click)="setStatus('livree')">Livrées</button>
+      <button class="ftab" [class.active]="statusFilter === 'annulee'"   (click)="setStatus('annulee')">Annulées</button>
+    </div>
+
+    <!-- Tri -->
+    <div class="select-wrap">
+      <select [(ngModel)]="sortBy" (change)="applyFilters()">
+        <option value="date-desc">Plus récentes</option>
+        <option value="date-asc">Plus anciennes</option>
+        <option value="montant-desc">Montant ↓</option>
+        <option value="montant-asc">Montant ↑</option>
+      </select>
+      <i class="fa-solid fa-chevron-down"></i>
+    </div>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="table-card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#ID</th>
+          <th>Client</th>
+          <th>Véhicules</th>
+          <th>Montant total</th>
+          <th>Date</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let cmd of paginatedCommandes">
+          <td class="id-cell">#{{ cmd.id }}</td>
+          <td>
+            <div class="client-cell">
+              <div class="client-avatar">
+                {{ cmd.user?.firstName?.charAt(0) | uppercase }}
+              </div>
+              <div>
+                <span class="client-name">{{ cmd.user?.firstName }} {{ cmd.user?.lastName }}</span>
+                <span class="client-email">{{ cmd.user?.email }}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="cars-cell">
+              <span class="car-tag" *ngFor="let ligne of cmd.ligne_commandes">
+                {{ ligne.car?.nom }}
+              </span>
+            </div>
+          </td>
+          <td class="montant-cell">{{ cmd.montant_total | number:'1.0-0' }} Fr</td>
+          <td class="date-cell">{{ cmd.created_at | date:'dd/MM/yyyy' }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="cmd.status">
+              <i class="fa-solid" [ngClass]="getStatusIcon(cmd.status)"></i>
+              {{ getStatusLabel(cmd.status) }}
+            </span>
+          </td>
+          <td>
+            <div class="action-btns">
+              <button class="btn-action blue" (click)="openDetail(cmd)" title="Voir détails">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+              <button class="btn-action green" (click)="openStatusModal(cmd)" title="Changer statut">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button class="btn-action red" (click)="confirmDelete(cmd)" title="Supprimer">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Empty state -->
+    <div class="empty-state" *ngIf="filteredCommandes.length === 0">
+      <i class="fa-solid fa-cart-shopping"></i>
+      <p>Aucune commande trouvée</p>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" *ngIf="totalPages > 1">
+    <button class="pg-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>
+    <button class="pg-btn" *ngFor="let p of pageNumbers"
+      [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+    <button class="pg-btn" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
+    <span class="pg-info">Page {{ currentPage }} / {{ totalPages }}</span>
+  </div>
+</div>
+
+<!-- ================================================================
+     MODAL DÉTAIL COMMANDE
+================================================================ -->
+<div class="modal-overlay" [class.open]="showDetail" (click)="showDetail = false">
+  <div class="modal" (click)="$event.stopPropagation()" *ngIf="selectedCmd">
+
+    <div class="modal-header">
+      <div>
+        <span class="modal-sub">Commande</span>
+        <h2>#{{ selectedCmd.id }}</h2>
+      </div>
+      <button class="modal-close" (click)="showDetail = false">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Infos client -->
+      <div class="detail-section">
+        <h4><i class="fa-solid fa-user"></i> Informations client</h4>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Nom complet</span>
+            <span class="detail-value">{{ selectedCmd.user?.firstName }} {{ selectedCmd.user?.lastName }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Email</span>
+            <span class="detail-value">{{ selectedCmd.user?.email }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Téléphone</span>
+            <span class="detail-value">{{ selectedCmd.user?.phone || '—' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Date commande</span>
+            <span class="detail-value">{{ selectedCmd.created_at | date:'dd/MM/yyyy à HH:mm' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lignes de commande -->
+      <div class="detail-section">
+        <h4><i class="fa-solid fa-car"></i> Véhicules commandés</h4>
+        <div class="ligne-list">
+          <div class="ligne-item" *ngFor="let ligne of selectedCmd.ligne_commandes">
+            <div class="ligne-car-info">
+              <div class="ligne-car-thumb">
+                <img *ngIf="ligne.car?.images?.length"
+                  [src]="storageUrl + ligne.car!.images![0].chemin"
+                  [alt]="ligne.car?.nom" />
+                <i *ngIf="!ligne.car?.images?.length" class="fa-solid fa-car"></i>
+              </div>
+              <div>
+                <span class="ligne-car-name">{{ ligne.car?.nom }}</span>
+                <span class="ligne-car-meta">{{ ligne.car?.marque }} — {{ ligne.car?.annee }}</span>
+              </div>
+            </div>
+            <span class="ligne-prix">{{ ligne.prix | number:'1.0-0' }} Fr</span>
+          </div>
+        </div>
+
+        <!-- Total -->
+        <div class="commande-total">
+          <span>Montant total</span>
+          <span class="total-amount">{{ selectedCmd.montant_total | number:'1.0-0' }} Fr</span>
+        </div>
+      </div>
+
+      <!-- Statut -->
+      <div class="detail-section">
+        <h4><i class="fa-solid fa-timeline"></i> Statut actuel</h4>
+        <span class="status-badge lg" [ngClass]="selectedCmd.status">
+          <i class="fa-solid" [ngClass]="getStatusIcon(selectedCmd.status)"></i>
+          {{ getStatusLabel(selectedCmd.status) }}
+        </span>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="showDetail = false">Fermer</button>
+      <button class="btn-save" (click)="showDetail = false; openStatusModal(selectedCmd)">
+        <i class="fa-solid fa-pen-to-square"></i> Modifier le statut
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     MODAL CHANGEMENT STATUT
+================================================================ -->
+<div class="modal-overlay" [class.open]="showStatusModal" (click)="showStatusModal = false">
+  <div class="modal modal--sm" (click)="$event.stopPropagation()" *ngIf="selectedCmd">
+
+    <div class="modal-header">
+      <div>
+        <span class="modal-sub">Commande #{{ selectedCmd.id }}</span>
+        <h2>Modifier le statut</h2>
+      </div>
+      <button class="modal-close" (click)="showStatusModal = false">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="status-options">
+        <label class="status-option" *ngFor="let s of statusOptions"
+          [class.selected]="newStatus === s.value">
+          <input type="radio" [(ngModel)]="newStatus" [value]="s.value" name="status" />
+          <div class="status-option-content">
+            <span class="status-badge" [ngClass]="s.value">
+              <i class="fa-solid" [ngClass]="s.icon"></i>
+              {{ s.label }}
+            </span>
+            <span class="status-desc">{{ s.desc }}</span>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="showStatusModal = false">Annuler</button>
+      <button class="btn-save" (click)="updateStatus()" [class.loading]="isSaving">
+        <span *ngIf="!isSaving"><i class="fa-solid fa-floppy-disk"></i> Enregistrer</span>
+        <span *ngIf="isSaving" class="spinner"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     MODAL SUPPRESSION
+================================================================ -->
+<div class="modal-overlay" [class.open]="showDeleteModal" (click)="showDeleteModal = false">
+  <div class="modal modal--sm" (click)="$event.stopPropagation()">
+    <div class="delete-modal-body">
+      <div class="delete-icon">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h3>Supprimer cette commande ?</h3>
+      <p>La commande <strong>#{{ cmdToDelete?.id }}</strong> sera supprimée définitivement.</p>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="showDeleteModal = false">Annuler</button>
+        <button class="btn-delete-confirm" (click)="deleteCommande()" [class.loading]="isDeleting">
+          <span *ngIf="!isDeleting"><i class="fa-solid fa-trash"></i> Supprimer</span>
+          <span *ngIf="isDeleting" class="spinner"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" [class.show]="toast.show" [ngClass]="toast.type">
+  <i class="fa-solid"
+    [class.fa-circle-check]="toast.type === 'success'"
+    [class.fa-circle-exclamation]="toast.type === 'error'"></i>
+  {{ toast.message }}
+</div>

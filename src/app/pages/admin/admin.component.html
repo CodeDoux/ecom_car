@@ -1,0 +1,160 @@
+<div class="admin-wrapper">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar" [class.collapsed]="isCollapsed" [class.mobile-open]="mobileMenuOpen">
+
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <span class="logo-text" *ngIf="!isCollapsed">ABK<span class="logo-accent">AUTO</span></span>
+      <span class="logo-icon" *ngIf="isCollapsed">A</span>
+    </div>
+
+    <!-- Nav -->
+    <nav class="sidebar-nav">
+      <ul>
+        <li>
+          <a routerLink="dashboard" routerLinkActive="active" class="nav-item" (click)="closeMobileSidebar()">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span *ngIf="!isCollapsed">Dashboard</span>
+            <span class="tooltip" *ngIf="isCollapsed">Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="cars" routerLinkActive="active" class="nav-item" (click)="closeMobileSidebar()">
+            <i class="fa-solid fa-car"></i>
+            <span *ngIf="!isCollapsed">Voitures</span>
+            <span class="tooltip" *ngIf="isCollapsed">Voitures</span>
+          </a>
+        </li>
+
+         <li>
+          <a routerLink="categories" routerLinkActive="active" class="nav-item" (click)="closeMobileSidebar()">
+            <i class="fa-solid fa-car"></i>
+            <span *ngIf="!isCollapsed">Categories</span>
+            <span class="tooltip" *ngIf="isCollapsed">Categories</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="commandes" routerLinkActive="active" class="nav-item" (click)="closeMobileSidebar()">
+            <i class="fa-solid fa-clipboard-list"></i>
+            <span *ngIf="!isCollapsed">Commandes</span>
+            <!--<span class="badge-nav"></span>-->
+            <span class="tooltip" *ngIf="isCollapsed">Commandes</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="users" routerLinkActive="active" class="nav-item" (click)="closeMobileSidebar()">
+            <i class="fa-solid fa-users"></i>
+            <span *ngIf="!isCollapsed">Utilisateurs</span>
+            <span class="tooltip" *ngIf="isCollapsed">Utilisateurs</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Séparateur -->
+      <div class="nav-separator" *ngIf="!isCollapsed">
+        <span>Paramètres</span>
+      </div>
+      <div class="nav-separator-line" *ngIf="isCollapsed"></div>
+
+      <ul>
+        <li>
+          <a href="admin/settings" class="nav-item" (click)="closeMobileSidebar()">
+            <i class="fa-solid fa-gear"></i>
+            <span *ngIf="!isCollapsed">Paramètres</span>
+            <span class="tooltip" *ngIf="isCollapsed">Paramètres</span>
+          </a>
+        </li>
+        <li>
+          <a  class="nav-item nav-item--danger" (click)="logout()">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span *ngIf="!isCollapsed">Déconnexion</span>
+            <span class="tooltip" *ngIf="isCollapsed" >Déconnexion</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Toggle collapse -->
+    <button class="collapse-btn" (click)="toggleCollapse()">
+      <i class="fa-solid" [class.fa-chevron-left]="!isCollapsed" [class.fa-chevron-right]="isCollapsed"></i>
+    </button>
+
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <div class="admin-main">
+
+    <!-- Topbar -->
+    <header class="admin-topbar">
+      <div class="topbar-left">
+        <button class="btn-mobile-menu" (click)="toggleMobileSidebar()">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="topbar-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" placeholder="Rechercher..." [(ngModel)]="searchQuery" />
+        </div>
+      </div>
+
+      <div class="page-header">
+      <a routerLink="/home" target="_blank" class="btn-visit-site">
+        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+        Voir le site
+      </a>
+    </div>
+
+      <div class="topbar-right">
+        <!-- Notifications -->
+        <button class="topbar-icon-btn" (click)="toggleNotifs()">
+          <i class="fa-solid fa-bell"></i>
+          <span class="notif-dot"></span>
+        </button>
+
+        <!-- Notifications dropdown -->
+        <div class="notif-dropdown" *ngIf="showNotifs">
+          <div class="notif-header">
+            <span>Notifications</span>
+            <button (click)="markAllRead()">Tout lire</button>
+          </div>
+          <div class="notif-item" *ngFor="let n of notifications">
+            <div class="notif-icon" [ngClass]="n.type">
+              <i class="fa-solid" [ngClass]="n.icon"></i>
+            </div>
+            <div class="notif-text">
+              <p>{{ n.message }}</p>
+              <span>{{ n.time }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin profile -->
+        <div class="admin-profile" (click)="toggleProfileMenu()">
+          <div class="profile-avatar">AD</div>
+          <div class="profile-info" *ngIf="!isCollapsed">
+            <span class="profile-name">Admin</span>
+            <span class="profile-role">Super Admin</span>
+          </div>
+          <i class="fa-solid fa-chevron-down" *ngIf="!isCollapsed"></i>
+        </div>
+
+        <!-- Profile dropdown -->
+        <div class="profile-dropdown" *ngIf="showProfileMenu">
+          <a href="#"><i class="fa-solid fa-user"></i> Mon profil</a>
+          <a href="#"><i class="fa-solid fa-shield"></i> Sécurité</a>
+          <div class="dropdown-divider"></div>
+          <a href="/" class="danger"><i class="fa-solid fa-right-from-bracket" (click)="logout()"></i> Déconnexion</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page content -->
+    <main class="admin-content">
+      <router-outlet></router-outlet>
+    </main>
+
+  </div>
+</div>
+
+<!-- Overlay mobile -->
+<div class="mobile-overlay" [class.visible]="mobileMenuOpen" (click)="toggleMobileSidebar()"></div>

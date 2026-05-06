@@ -1,0 +1,443 @@
+<!-- ===== HERO SECTION ===== -->
+<section class="hero" id="home">
+
+  <!-- Background image -->
+  <div class="hero-bg">
+    <img [src]="settings['hero_image'] || 'images/hero1.jpg'" alt="Hero background" />
+    <div class="hero-overlay"></div>
+  </div>
+
+  <!-- Content -->
+  <div class="hero-content">
+    <div class="hero-text">
+      <p class="hero-sub">{{ settings['hero_sub'] || 'TRUSTED DEALER, RENTAL' }}</p>
+      <h1 class="hero-title">{{ settings['hero_title'] || 'Premium Car Collection..' }}</h1>
+      <p class="hero-desc">{{ settings['hero_desc'] || '' }}</p>
+      <div class="hero-cta">
+        <button class="btn-primary" (click)="goToListing()">
+          {{ settings['hero_btn_text'] || 'Go To Listing' }}
+        </button>
+        <button class="btn-play" aria-label="Play video">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+   
+  </div>
+
+</section>
+
+<!-- ===== BROWSE BY BRANDS ===== -->
+<section class="brands-section">
+  <h2 class="section-title">Rechercher par marques</h2>
+
+  <div class="brands-grid">
+  <div class="brand-card"
+    *ngFor="let brand of brands"
+    (click)="filterByBrand(brand)"
+    [class.active]="selectedBrand === brand">
+
+    <div class="brand-logo">
+      <!-- Image si logo dispo et pas d'erreur -->
+      <img
+        *ngIf="getBrandLogo(brand) && !hasBrandImgError(brand)"
+        [src]="getBrandLogo(brand)"
+        [alt]="brand"
+        (error)="onBrandImgError($event, brand)" />
+
+      <!-- Fallback initiale -->
+      <div class="brand-initial"
+        *ngIf="!getBrandLogo(brand) || hasBrandImgError(brand)">
+        {{ getBrandInitial(brand) }}
+      </div>
+    </div>
+
+    <span class="brand-name">{{ brand }}</span>
+  </div>
+</div>
+</section>
+
+<!-- ===== EXPLORE VEHICLES ===== -->
+<section class="vehicles-section">
+  <div class="vehicles-header">
+    <div class="vehicles-header-left">
+      <h2 class="section-title">Nouveautés</h2>
+      <p class="section-subtitle">
+        <i class="fa-solid fa-tag"></i>
+        Prix légèrement négociables — contactez-nous pour une offre personnalisée.
+      </p>
+    </div>
+    <button class="btn-voir-plus" routerLink="/home/all-cars">
+      Voir plus
+      <i class="fa-solid fa-arrow-right"></i>
+    </button>
+  </div>
+
+  <div class="vehicles-grid">
+    <div class="vehicle-card" *ngFor="let car of filteredCars">
+      <div class="vehicle-img">
+        <img [src]="car.images && car.images.length > 0
+          ? getImageUrl(car.images[0].chemin)
+          : 'images/car-placeholder.jpg'" [alt]="car.nom" />
+        <span class="tag-featured">Featured</span>
+        <span class="tag-photos">
+          <i class="fa-regular fa-image"></i> {{ car.images.length || 0 }}
+        </span>
+        <span class="tag-year">{{ car.annee }}</span>
+      </div>
+      <div class="vehicle-body">
+        <p class="vehicle-cat">{{ car.categorie?.name }}</p>
+        <h3 class="vehicle-name">{{ car.nom }}</h3>
+        <p class="vehicle-price">{{ car.prix | number }} CFA</p>
+        <div class="vehicle-specs">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            Carburant<br><strong>{{ car.carburant }}</strong>
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            Kilométrage<br><strong>{{ car.kilometrage }}</strong>
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2"/>
+              <line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            Transmission<br><strong>{{ car.transmission }}</strong>
+          </span>
+        </div>
+        <div class="vehicle-footer">
+          <button class="btn-details" (click)="openModal(car)">
+            Voir détails <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          <div class="vehicle-actions">
+            <button aria-label="Compare">
+              <i class="fa-solid fa-right-left"></i>
+            </button>
+            <button aria-label="Wishlist">
+              <i class="fa-regular fa-heart"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL DÉTAILS VOITURE ===== -->
+  <div class="modal-overlay" [class.open]="selectedCar !== null" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()" *ngIf="selectedCar">
+
+      <!-- Header -->
+      <div class="modal-header">
+        <div>
+          <span class="modal-category">{{ selectedCar.categorie?.name }}</span>
+          <h2 class="modal-title">{{ selectedCar.nom }}</h2>
+        </div>
+        <button class="modal-close" (click)="closeModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body">
+
+        <!-- Image carousel -->
+        <div class="modal-img-wrap">
+          <img [src]="selectedCar.images && selectedCar.images.length > 0
+            ? getImageUrl(selectedCar.images[modalImageIndex].chemin)
+            : 'images/car-placeholder.jpg'"
+            [alt]="selectedCar.nom" />
+
+          <!-- Arrows -->
+          <ng-container *ngIf="selectedCar.images && selectedCar.images.length > 1">
+            <button class="modal-img-prev" (click)="prevModalImage(); $event.stopPropagation()">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button class="modal-img-next" (click)="nextModalImage(); $event.stopPropagation()">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </ng-container>
+
+          <!-- Dots -->
+          <div class="modal-img-dots" *ngIf="selectedCar.images && selectedCar.images.length > 1">
+            <span *ngFor="let img of selectedCar.images; let i = index"
+              class="modal-dot"
+              [class.active]="i === modalImageIndex"
+              (click)="modalImageIndex = i; $event.stopPropagation()">
+            </span>
+          </div>
+
+          <!-- Compteur -->
+          <span class="modal-img-counter" *ngIf="selectedCar.images && selectedCar.images.length > 1">
+            {{ modalImageIndex + 1 }} / {{ selectedCar.images.length }}
+          </span>
+
+          <span class="tag-status" [class.new]="selectedCar.status === 'new'">
+            {{ selectedCar.status === 'new' ? 'Nouveau' : 'Occasion' }}
+          </span>
+          <span class="tag-year">{{ selectedCar.annee }}</span>
+        </div>
+
+        <!-- Thumbnails -->
+        <div class="modal-thumbs" *ngIf="selectedCar.images && selectedCar.images.length > 1">
+          <div class="modal-thumb"
+            *ngFor="let img of selectedCar.images; let i = index"
+            [class.active]="i === modalImageIndex"
+            (click)="modalImageIndex = i; $event.stopPropagation()">
+            <img [src]="getImageUrl(img.chemin)" [alt]="selectedCar.nom" />
+          </div>
+        </div>
+
+        <!-- Infos -->
+        <div class="modal-info">
+
+          <!-- Prix -->
+          <div class="modal-price-row">
+            <span class="modal-price">{{ selectedCar.prix | number }} CFA</span>
+            <button class="btn-wish modal-wish" aria-label="Favori">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Specs grid -->
+          <div class="modal-specs-grid">
+            <div class="spec-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+              <div>
+                <span class="spec-label">Carburant</span>
+                <span class="spec-value">{{ selectedCar.carburant }}</span>
+              </div>
+            </div>
+            <div class="spec-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <div>
+                <span class="spec-label">Kilométrage</span>
+                <span class="spec-value">{{ selectedCar.kilometrage }}</span>
+              </div>
+            </div>
+            <div class="spec-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+              <div>
+                <span class="spec-label">Transmission</span>
+                <span class="spec-value">{{ selectedCar.transmission }}</span>
+              </div>
+            </div>
+            <div class="spec-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              <div>
+                <span class="spec-label">Année</span>
+                <span class="spec-value">{{ selectedCar.annee }}</span>
+              </div>
+            </div>
+            <div class="spec-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 8v4l3 3"/>
+              </svg>
+              <div>
+                <span class="spec-label">Statut</span>
+                <span class="spec-value">{{ selectedCar.status === 'new' ? 'Nouveau' : 'Occasion' }}</span>
+              </div>
+            </div>
+            <div class="spec-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              <div>
+                <span class="spec-label">Marque</span>
+                <span class="spec-value">{{ selectedCar.marque }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="modal-desc">
+            <h4>Description</h4>
+            <p>
+              Le {{ selectedCar.nom }} ({{ selectedCar.annee }}) est un véhicule de catégorie
+              <strong>{{ selectedCar.categorie?.name }}</strong> disponible en
+              <strong>{{ selectedCar.status === 'new' ? 'état neuf' : 'occasion' }}</strong>.
+              Motorisation <strong>{{ selectedCar.carburant }}</strong>, boîte
+              <strong>{{ selectedCar.transmission }}</strong>,
+              {{ selectedCar.kilometrage }} au compteur.
+            </p>
+          </div>
+
+          <!-- CTA -->
+          <div class="modal-cta">
+            <a [href]="'https://wa.me/' + (settings['whatsapp_number'] || '221787776655') + '?text=Bonjour, je suis intéressé par le ' + selectedCar.nom"
+              target="_blank" class="btn-contact-modal">
+              <i class="fa-brands fa-whatsapp"></i>
+              Contacter sur WhatsApp
+            </a>
+            <button class="btn-compare-modal">
+              <i class="fa-solid fa-right-left"></i>
+              Comparer
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+
+<!-- ================================================================
+     BEST SELLERS SECTION
+================================================================ -->
+<section class="bestseller-section">
+  <div class="bestseller-container">
+
+    <!-- Gauche : Carrousel -->
+    <div class="bestseller-carousel">
+      <div class="carousel-track" [style.transform]="'translateX(-' + (activeSlide * 100) + '%)'">
+        <div class="carousel-slide" *ngFor="let car of bestSellers">
+          <img [src]="car.image.startsWith('http') ? car.image : storageUrl+'/'+car.image" [alt]="car.name" />
+          <div class="slide-caption">
+            <span class="slide-name">{{ car.name }}</span>
+            <span class="slide-price">{{ car.price | number }} CFA</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bouton play / pause -->
+      <button class="carousel-play" (click)="toggleCarousel()">
+        <svg *ngIf="!isPlaying" viewBox="0 0 24 24" fill="currentColor">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        <svg *ngIf="isPlaying" viewBox="0 0 24 24" fill="currentColor">
+          <rect x="6" y="4" width="4" height="16"/>
+          <rect x="14" y="4" width="4" height="16"/>
+        </svg>
+      </button>
+
+      <!-- Dots -->
+      <div class="carousel-dots">
+        <button
+          *ngFor="let car of bestSellers; let i = index"
+          class="dot"
+          [class.active]="i === activeSlide"
+          (click)="goToSlide(i)">
+        </button>
+      </div>
+
+      <!-- Arrows -->
+      <button class="carousel-arrow prev" (click)="prevSlide()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <button class="carousel-arrow next" (click)="nextSlide()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Droite : Texte -->
+    <div class="bestseller-content">
+      <p class="section-sub red">MEILLEURES VENTES</p>
+      <h2 class="bestseller-title">
+        {{ settings['bestseller_title'] || 'Obtenez le Meilleur Prix Pour Votre Voiture' }}
+      </h2>
+      <p class="bestseller-desc">
+        {{ settings['bestseller_desc'] || 'Nous nous engageons à offrir à nos clients un service exceptionnel, des prix compétitifs et une large gamme de véhicules premium.' }}
+      </p>
+
+      <ul class="bestseller-features">
+        <li>
+          <i class="fa-solid fa-circle-check"></i>
+          Le plus grand choix de véhicules premium au Sénégal
+        </li>
+        <li>
+          <i class="fa-solid fa-circle-check"></i>
+          Assistance routière disponible 24h/7j
+        </li>
+        <li>
+          <i class="fa-solid fa-circle-check"></i>
+          Financement et facilités de paiement disponibles
+        </li>
+        <li>
+          <i class="fa-solid fa-circle-check"></i>
+          Garantie satisfaction sur tous nos véhicules
+        </li>
+      </ul>
+
+      <button class="btn-getstarted" (click)="goToListing()">
+        Commencer
+        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+      </button>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================================================================
+     SERVICES SECTION
+================================================================ -->
+<section class="services-section">
+  <div class="services-container">
+
+    <!-- Gauche : Titre -->
+    <div class="services-left">
+      <p class="section-sub red">NOS SERVICES</p>
+      <h2 class="services-title">
+        Nous sommes<br>
+        <span>GRANDS</span> dans ce<br>
+        qui compte pour vous
+      </h2>
+      <p class="services-sub-desc">
+        Une gamme complète de services automobiles
+        pensés pour vous simplifier la vie.
+      </p>
+      <button class="btn-services-cta" (click)="goToListing()">
+        Voir nos véhicules
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+
+    <!-- Droite : Grille de services -->
+    <div class="services-grid">
+      <div class="service-card" *ngFor="let service of services">
+        <div class="service-icon-wrap" [style.background]="service.bg" [style.color]="service.color">
+          <i class="fa-solid" [ngClass]="service.icon"></i>
+        </div>
+        <div class="service-info">
+          <h3 class="service-name">
+            {{ settings['service' + service.index + '_title'] || service.title }}
+          </h3>
+          <p class="service-desc">
+            {{ settings['service' + service.index + '_desc'] || service.description }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>

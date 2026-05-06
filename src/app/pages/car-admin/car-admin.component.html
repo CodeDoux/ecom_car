@@ -1,0 +1,439 @@
+<!-- Page header -->
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Gestion des Voitures</h1>
+    <p class="page-sub">{{ filteredCars.length }} véhicule{{ filteredCars.length > 1 ? 's' : '' }} au total</p>
+  </div>
+  <button class="btn-add" (click)="openModal('add')">
+    <i class="fa-solid fa-plus"></i>
+    Ajouter un véhicule
+  </button>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="toolbar-left">
+    <!-- Search -->
+    <div class="search-wrap">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" placeholder="Rechercher un véhicule..."
+        [(ngModel)]="searchQuery" (input)="applyFilters()" />
+      <button class="btn-clear" *ngIf="searchQuery" (click)="searchQuery=''; applyFilters()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Filtre statut -->
+    <div class="filter-tabs">
+      <button class="ftab" [class.active]="statusFilter === ''"     (click)="setStatus('')">Tous</button>
+      <button class="ftab" [class.active]="statusFilter === 'new'"  (click)="setStatus('new')">Nouveaux</button>
+      <button class="ftab" [class.active]="statusFilter === 'used'" (click)="setStatus('used')">Occasions</button>
+    </div>
+  </div>
+
+  <div class="toolbar-right">
+    <!-- Filtre catégorie -->
+    <div class="select-wrap">
+      <select [(ngModel)]="categoryFilter" (change)="applyFilters()">
+        <option value="">Toutes catégories</option>
+        <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+      </select>
+      <i class="fa-solid fa-chevron-down"></i>
+    </div>
+
+    <!-- Tri -->
+    <div class="select-wrap">
+      <select [(ngModel)]="sortBy" (change)="applyFilters()">
+        <option value="default">Trier par</option>
+        <option value="price-asc">Prix ↑</option>
+        <option value="price-desc">Prix ↓</option>
+        <option value="year-desc">Année récente</option>
+        <option value="name">Nom A–Z</option>
+      </select>
+      <i class="fa-solid fa-chevron-down"></i>
+    </div>
+
+    <!-- Vue -->
+    <div class="view-toggle">
+      <button [class.active]="viewMode === 'table'" (click)="viewMode = 'table'">
+        <i class="fa-solid fa-table-list"></i>
+      </button>
+      <button [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'">
+        <i class="fa-solid fa-grip"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TABLE VIEW ===== -->
+<div class="table-card" *ngIf="viewMode === 'table'">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th><input type="checkbox" (change)="toggleSelectAll($event)" [checked]="allSelected" /></th>
+          <th>Véhicule</th>
+          <th>Catégorie</th>
+          <th>Prix</th>
+          <th>Année</th>
+          <th>Carburant</th>
+          <th>Transmission</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let car of paginatedCars" [class.selected]="selectedIds.includes(car.id)">
+          <td>
+            <input type="checkbox"
+              [checked]="selectedIds.includes(car.id)"
+              (change)="toggleSelect(car.id)" />
+          </td>
+          <td>
+            <div class="car-cell">
+              <div class="car-thumb">
+                <img 
+                    [src]="car?.images && car.images.length > 0 ? getImageUrl(car.images[0].chemin) : '../../../assets/images/ferme.jpg'" 
+                    [alt]="car.nom" 
+                    class="product-thumb">
+              </div>
+              <div>
+                <span class="car-cell-name">{{ car.nom }}</span>
+                <span class="car-cell-mile">{{ car.kilometrage }}</span>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge-cat">{{ car.categorie?.name }}</span></td>
+          <td class="price-cell">${{ car.prix | number }}</td>
+          <td class="text-muted">{{ car.annee }}</td>
+          <td class="text-muted">{{ car.carburant }}</td>
+          <td class="text-muted">{{ car.transmission }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="car.status">
+              {{ car.status === 'nouveau' ? 'Nouveau' : 'Occasion' }}
+            </span>
+          </td>
+          <td>
+            <div class="action-btns">
+              <button class="btn-action blue" (click)="openModal('edit', car)" title="Modifier">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button class="btn-action red" (click)="confirmDelete(car)" title="Supprimer">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Empty state -->
+    <div class="empty-state" *ngIf="filteredCars.length === 0">
+      <i class="fa-solid fa-car-side"></i>
+      <p>Aucun véhicule trouvé</p>
+      <button class="btn-add sm" (click)="openModal('add')">Ajouter un véhicule</button>
+    </div>
+  </div>
+
+  <!-- Bulk actions -->
+  <div class="bulk-bar" *ngIf="selectedIds.length > 0">
+    <span>{{ selectedIds.length }} sélectionné(s)</span>
+    <button class="btn-bulk-delete" (click)="deleteSelected()">
+      <i class="fa-solid fa-trash"></i> Supprimer la sélection
+    </button>
+    <button class="btn-bulk-cancel" (click)="selectedIds = []">Annuler</button>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" *ngIf="totalPages > 1">
+    <button class="pg-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>
+    <button class="pg-btn" *ngFor="let p of pageNumbers"
+      [class.active]="p === currentPage"
+      (click)="goToPage(p)">{{ p }}</button>
+    <button class="pg-btn" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
+    <span class="pg-info">Page {{ currentPage }} / {{ totalPages }}</span>
+  </div>
+</div>
+
+<!-- ===== GRID VIEW ===== -->
+<div class="cars-grid" *ngIf="viewMode === 'grid'">
+  <div class="car-card" *ngFor="let car of paginatedCars">
+    <div class="car-card-img">
+      <img 
+                    [src]="car?.images && car.images.length > 0 ? getImageUrl(car.images[0].chemin) : '../../../assets/images/ferme.jpg'" 
+                    [alt]="car.nom" 
+                    class="product-thumb">
+      <span class="status-badge" [ngClass]="car.status">
+        {{ car.status === 'nouveau' ? 'Nouveau' : 'Occasion' }}
+      </span>
+    </div>
+    <div class="car-card-body">
+      <span class="badge-cat">{{ car.categorie?.name }}</span>
+      <h3>{{ car.nom }}</h3>
+      <p class="car-price">${{ car.prix | number }}</p>
+      <div class="car-meta">
+        <span><i class="fa-solid fa-calendar-days"></i> {{ car.annee }}</span>
+        <span><i class="fa-solid fa-gas-pump"></i> {{ car.carburant }}</span>
+        <span><i class="fa-solid fa-gears"></i> {{ car.transmission }}</span>
+      </div>
+      <div class="car-card-actions">
+        <button class="btn-action blue" (click)="openModal('edit', car)">
+          <i class="fa-solid fa-pen"></i> Modifier
+        </button>
+        <button class="btn-action red" (click)="confirmDelete(car)">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     MODAL AJOUTER / MODIFIER
+================================================================ -->
+<div class="modal-overlay" [class.open]="showModal" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <h2>{{ modalMode === 'add' ? 'Ajouter un véhicule' : 'Modifier le véhicule' }}</h2>
+      <button class="modal-close" (click)="closeModal()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <form (ngSubmit)="onSave()">
+
+        <!-- Zone upload -->
+          <div class="image-upload-area" (click)="fileInput.click()">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <span>Cliquer pour ajouter des images</span>
+            <span class="upload-hint">JPG, PNG — plusieurs fichiers acceptés</span>
+            <input #fileInput type="file" accept="image/*" multiple hidden
+              (change)="onImageChange($event)" />
+          </div>
+
+          <!-- Images existantes (mode edit) -->
+          <div class="images-grid" *ngIf="carImages.length > 0">
+            <p class="images-label">Images existantes</p>
+            <div class="image-thumbs">
+              <div class="img-thumb" *ngFor="let img of carImages"
+                [class.primary]="img.is_primary">
+                <img [src]="getImageUrl(img.chemin)"  [alt]="img.id" />
+                <div class="img-thumb-actions">
+                  <button type="button" class="btn-primary-img"
+                    (click)="setPrimaryImage(img)" title="Définir principale"
+                    *ngIf="!img.is_primary">
+                    <i class="fa-solid fa-star"></i>
+                  </button>
+                  <button type="button" class="btn-remove-img"
+                    (click)="removeExistingImage(img)" title="Supprimer">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+                <span class="primary-badge" *ngIf="img.is_primary">
+                  <i class="fa-solid fa-star"></i> Principale
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nouveaux aperçus -->
+          <div class="images-grid" *ngIf="previews.length > 0">
+            <p class="images-label">Nouvelles images ({{ previews.length }})</p>
+            <div class="image-thumbs">
+              <div class="img-thumb" *ngFor="let src of previews; let i = index">
+                <img [src]="src" alt="preview" />
+                <div class="img-thumb-actions">
+                  <button type="button" class="btn-remove-img" (click)="removePreview(i)">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        <!-- Ligne 1 : Nom + Marque -->
+        <div class="form-row">
+          <div class="form-field">
+            <label>Nom du véhicule *</label>
+            <input type="text" placeholder="Ex: Land Cruiser Prado"
+              [(ngModel)]="modalForm['nom']" name="nom"
+              [class.error]="formErrors['nom']" />
+            <span class="err" *ngIf="formErrors['nom']">{{ formErrors['nom'] }}</span>
+          </div>
+          <div class="form-field">
+            <label>Marque *</label>
+            <input type="text" placeholder="Ex: Toyota"
+              [(ngModel)]="modalForm['marque']" name="marque"
+              [class.error]="formErrors['marque']" />
+            <span class="err" *ngIf="formErrors['marque']">{{ formErrors['marque'] }}</span>
+          </div>
+        </div>
+
+        <!-- Ligne 2 : Modèle + Catégorie -->
+        <div class="form-row">
+          <div class="form-field">
+            <label>Modèle *</label>
+            <input type="text" placeholder="Ex: Prado 150"
+              [(ngModel)]="modalForm['model']" name="model"
+              [class.error]="formErrors['model']" />
+            <span class="err" *ngIf="formErrors['model']">{{ formErrors['model'] }}</span>
+          </div>
+          <div class="form-field">
+            <label>Catégorie *</label>
+            <div class="select-wrap">
+              <select [(ngModel)]="modalForm['category_id']" name="category_id"
+                [class.error]="formErrors['category_id']">
+                <option value="">Choisir...</option>
+                <option *ngFor="let cat of categories" [value]="cat.id">
+                  {{ cat.name }}
+                </option>
+              </select>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <span class="err" *ngIf="formErrors['category_id']">{{ formErrors['category_id'] }}</span>
+          </div>
+        </div>
+
+        <!-- Ligne 3 : Prix + Année -->
+        <div class="form-row">
+          <div class="form-field">
+            <label>Prix ($) *</label>
+            <input type="number" placeholder="Ex: 45000"
+              [(ngModel)]="modalForm['prix']" name="prix"
+              [class.error]="formErrors['prix']" />
+            <span class="err" *ngIf="formErrors['prix']">{{ formErrors['prix'] }}</span>
+          </div>
+          <div class="form-field">
+            <label>Année *</label>
+            <input type="number" placeholder="Ex: 2023"
+              [(ngModel)]="modalForm['annee']" name="annee"
+              [class.error]="formErrors['annee']" />
+            <span class="err" *ngIf="formErrors['annee']">{{ formErrors['annee'] }}</span>
+          </div>
+        </div>
+
+        <!-- Ligne 4 : Kilométrage + Couleur -->
+        <div class="form-row">
+          <div class="form-field">
+            <label>Kilométrage (km) *</label>
+            <input type="text" placeholder="Ex: 15k km"
+              [(ngModel)]="modalForm['kilometrage']" name="kilometrage"
+              [class.error]="formErrors['kilometrage']" />
+            <span class="err" *ngIf="formErrors['kilometrage']">{{ formErrors['kilometrage'] }}</span>
+          </div>
+          <div class="form-field">
+            <label>Couleur *</label>
+            <input type="text" placeholder="Ex: Noir"
+              [(ngModel)]="modalForm['couleur']" name="couleur"
+              [class.error]="formErrors['couleur']" />
+            <span class="err" *ngIf="formErrors['couleur']">{{ formErrors['couleur'] }}</span>
+          </div>
+        </div>
+
+        <!-- Ligne 5 : Carburant + Transmission -->
+        <div class="form-row">
+          <div class="form-field">
+            <label>Carburant *</label>
+            <div class="select-wrap">
+              <select [(ngModel)]="modalForm['carburant']" name="carburant"
+                [class.error]="formErrors['carburant']">
+                <option value="">Choisir...</option>
+                <option value="Essence">Essence</option>
+                <option value="Diesel">Diesel</option>
+                <option value="Hybride">Hybride</option>
+                <option value="Électrique">Électrique</option>
+              </select>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <span class="err" *ngIf="formErrors['carburant']">{{ formErrors['carburant'] }}</span>
+          </div>
+          <div class="form-field">
+            <label>Transmission *</label>
+            <div class="select-wrap">
+              <select [(ngModel)]="modalForm['transmission']" name="transmission"
+                [class.error]="formErrors['transmission']">
+                <option value="">Choisir...</option>
+                <option value="Automatique">Automatique</option>
+                <option value="Manuelle">Manuelle</option>
+              </select>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <span class="err" *ngIf="formErrors['transmission']">{{ formErrors['transmission'] }}</span>
+          </div>
+        </div>
+
+        <!-- Ligne 6 : Statut -->
+        <div class="form-row">
+          <div class="form-field">
+            <label>Statut *</label>
+            <div class="select-wrap">
+              <select [(ngModel)]="modalForm['status']" name="status">
+                <option value="nouveau">Nouveau</option>
+                <option value="occasion">Occasion</option>
+                <option value="occasion"></option>
+              </select>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+          </div>
+          <div class="form-field">
+            <!-- champ vide pour aligner la grille -->
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-field">
+          <label>Description</label>
+          <textarea placeholder="Décrivez le véhicule..."
+            [(ngModel)]="modalForm['description']" name="description"
+            rows="3"></textarea>
+        </div>
+
+        <!-- Actions -->
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="closeModal()">Annuler</button>
+          <button type="submit" class="btn-save" [class.loading]="isSaving">
+            <span *ngIf="!isSaving">
+              <i class="fa-solid fa-floppy-disk"></i>
+              {{ modalMode === 'add' ? 'Ajouter' : 'Enregistrer' }}
+            </span>
+            <span *ngIf="isSaving" class="spinner"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     MODAL CONFIRMATION SUPPRESSION
+================================================================ -->
+<div class="modal-overlay" [class.open]="showDeleteModal" (click)="showDeleteModal = false">
+  <div class="modal modal--sm" (click)="$event.stopPropagation()">
+    <div class="delete-modal-body">
+      <div class="delete-icon">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h3>Supprimer ce véhicule ?</h3>
+      <p>Vous êtes sur le point de supprimer <strong>{{ carToDelete?.nom }}</strong>. Cette action est irréversible.</p>
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="showDeleteModal = false">Annuler</button>
+        <button class="btn-delete-confirm" (click)="deleteCar()" [class.loading]="isDeleting">
+          <span *ngIf="!isDeleting"><i class="fa-solid fa-trash"></i> Supprimer</span>
+          <span *ngIf="isDeleting" class="spinner"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" [class.show]="toast.show" [ngClass]="toast.type">
+  <i class="fa-solid" [class.fa-circle-check]="toast.type === 'success'" [class.fa-circle-exclamation]="toast.type === 'error'"></i>
+  {{ toast.message }}
+</div>

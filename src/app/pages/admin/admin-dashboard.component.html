@@ -1,0 +1,173 @@
+<!-- Page title -->
+<div class="page-header">
+  
+  <div>
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-sub">Bienvenue, Admin — voici un aperçu de l'activité</p>
+  </div>
+  <div class="page-header-right">
+    <div class="date-badge">
+      <i class="fa-solid fa-calendar-days"></i>
+      {{ today | date:'dd MMMM yyyy' }}
+    </div>
+  </div>
+</div>
+
+<!-- ===== KPI CARDS ===== -->
+<div class="kpi-grid">
+  <div class="kpi-card" *ngFor="let kpi of kpis">
+    <div class="kpi-left">
+      <span class="kpi-label">{{ kpi.label }}</span>
+      <span class="kpi-value">{{ kpi.value }}</span>
+      <span class="kpi-trend" [class.up]="kpi.trendUp" [class.down]="!kpi.trendUp">
+        <i class="fa-solid" [class.fa-arrow-trend-up]="kpi.trendUp" [class.fa-arrow-trend-down]="!kpi.trendUp"></i>
+        {{ kpi.trend }} <span>vs mois dernier</span>
+      </span>
+    </div>
+    <div class="kpi-icon" [style.background]="kpi.color + '1a'" [style.color]="kpi.color">
+      <i class="fa-solid" [ngClass]="kpi.icon"></i>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CHARTS ROW ===== -->
+<div class="charts-row">
+
+  <!-- Ventes mensuelles -->
+  <div class="chart-card chart-card--lg">
+    <div class="chart-header">
+      <div>
+        <h3>Ventes mensuelles</h3>
+        <p>Revenus générés par mois (2024)</p>
+      </div>
+      <div class="chart-tabs">
+        <button class="ctab" [class.active]="chartPeriod === '6m'" (click)="setChartPeriod('6m')">6 mois</button>
+        <button class="ctab" [class.active]="chartPeriod === '1y'" (click)="setChartPeriod('1y')">1 an</button>
+      </div>
+    </div>
+    <div class="bar-chart">
+      <div class="bar-chart-bars">
+        <div class="bar-col" *ngFor="let d of chartData">
+          <div class="bar-tooltip">${{ d.value | number }}</div>
+          <div class="bar"
+            [style.height.%]="(d.value / maxChartValue) * 100"
+            [class.active]="d.active">
+          </div>
+          <span class="bar-label">{{ d.month }}</span>
+        </div>
+      </div>
+      <div class="bar-chart-y">
+        <span *ngFor="let y of yAxis">{{ y }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Répartition catégories -->
+  <div class="chart-card chart-card--sm">
+    <div class="chart-header">
+      <div>
+        <h3>Par catégorie</h3>
+        <p>Répartition du stock</p>
+      </div>
+    </div>
+    <div class="donut-chart">
+      <svg viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="var(--bg-hover)" stroke-width="18"/>
+        <circle *ngFor="let seg of donutSegments"
+          cx="60" cy="60" r="50"
+          fill="none"
+          [attr.stroke]="seg.color"
+          stroke-width="18"
+          stroke-linecap="round"
+          [attr.stroke-dasharray]="seg.dash"
+          [attr.stroke-dashoffset]="seg.offset"
+          transform="rotate(-90 60 60)"/>
+      </svg>
+      <div class="donut-center">
+        <span class="donut-total">{{ totalCars }}</span>
+        <span class="donut-label">véhicules</span>
+      </div>
+    </div>
+    <div class="donut-legend">
+      <div class="legend-item" *ngFor="let seg of donutSegments">
+        <span class="legend-dot" [style.background]="seg.color"></span>
+        <span class="legend-name">{{ seg.label }}</span>
+        <span class="legend-val">{{ seg.count }}</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== BOTTOM ROW ===== -->
+<div class="bottom-row">
+
+  <!-- Dernières commandes -->
+  <div class="table-card">
+    <div class="card-header">
+      <h3>Dernières commandes</h3>
+      <a routerLink="../orders" class="btn-see-all">Voir tout <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#ID</th>
+            <th>Client</th>
+            <th>Véhicule</th>
+            <th>Montant</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let order of recentOrders">
+            <td class="order-id">{{ order.id }}</td>
+            <td>
+              <div class="client-cell">
+                <div class="client-avatar">{{ order.client[0] }}</div>
+                {{ order.client }}
+              </div>
+            </td>
+            <td class="text-muted">{{ order.vehicle }}</td>
+            <td class="order-amount">${{ order.amount | number }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="order.status">
+                {{ statusLabel(order.status) }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Voitures les + vues -->
+  <div class="top-cars-card">
+    <div class="card-header">
+      <h3>Top véhicules</h3>
+      <a routerLink="../cars" class="btn-see-all">Voir tout <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+    <div class="top-cars-list">
+      <div class="top-car-item" *ngFor="let car of topCars; let i = index">
+        <span class="top-rank" [class.gold]="i===0" [class.silver]="i===1" [class.bronze]="i===2">
+          {{ i + 1 }}
+        </span>
+        <div class="top-car-img">
+          <img [src]="car.image" [alt]="car.name" />
+        </div>
+        <div class="top-car-info">
+          <span class="top-car-name">{{ car.name }}</span>
+          <span class="top-car-cat">{{ car.category }}</span>
+        </div>
+        <div class="top-car-right">
+          <span class="top-car-price">${{ car.price | number }}</span>
+          <!--<div class="top-car-bar-wrap">
+            <div class="top-car-bar" [style.width.%]="car.views"></div>
+          </div>
+          <span class="top-car-views">{{ car.views }}%</span>-->
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

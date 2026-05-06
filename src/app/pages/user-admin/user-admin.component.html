@@ -1,0 +1,375 @@
+<!-- Page header -->
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Gestion des Utilisateurs</h1>
+    <p class="page-sub">{{ filteredUsers.length }} utilisateur{{ filteredUsers.length > 1 ? 's' : '' }} au total</p>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fa-solid fa-users"></i></div>
+    <div>
+      <p class="stat-val">{{ users.length }}</p>
+      <p class="stat-lbl">Total</p>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fa-solid fa-user-check"></i></div>
+    <div>
+      <p class="stat-val">{{ getRoleCount('user') }}</p>
+      <p class="stat-lbl">Clients</p>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon amber"><i class="fa-solid fa-user-shield"></i></div>
+    <div>
+      <p class="stat-val">{{ getRoleCount('admin') }}</p>
+      <p class="stat-lbl">Admins</p>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon purple"><i class="fa-solid fa-cart-shopping"></i></div>
+    <div>
+      <p class="stat-val">{{ getActiveCount() }}</p>
+      <p class="stat-lbl">Avec commandes</p>
+    </div>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <input type="text" placeholder="Rechercher par nom, email..."
+      [(ngModel)]="searchQuery" (input)="applyFilters()" />
+    <button class="btn-clear" *ngIf="searchQuery" (click)="searchQuery=''; applyFilters()">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <div class="toolbar-right">
+    <!-- Filtre rôle -->
+    <div class="filter-tabs">
+      <button class="ftab" [class.active]="roleFilter === ''"      (click)="setRole('')">Tous</button>
+      <button class="ftab" [class.active]="roleFilter === 'user'"  (click)="setRole('user')">Clients</button>
+      <button class="ftab" [class.active]="roleFilter === 'admin'" (click)="setRole('admin')">Admins</button>
+    </div>
+
+    <!-- Tri -->
+    <div class="select-wrap">
+      <select [(ngModel)]="sortBy" (change)="applyFilters()">
+        <option value="date-desc">Plus récents</option>
+        <option value="date-asc">Plus anciens</option>
+        <option value="name">Nom A–Z</option>
+        <option value="commandes-desc">Plus de commandes</option>
+      </select>
+      <i class="fa-solid fa-chevron-down"></i>
+    </div>
+
+    <!-- Vue -->
+    <div class="view-toggle">
+      <button [class.active]="viewMode === 'table'" (click)="viewMode = 'table'">
+        <i class="fa-solid fa-table-list"></i>
+      </button>
+      <button [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'">
+        <i class="fa-solid fa-grip"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TABLE VIEW ===== -->
+<div class="table-card" *ngIf="viewMode === 'table'">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Utilisateur</th>
+          <th>Email</th>
+          <th>Téléphone</th>
+          <th>Rôle</th>
+          <th>Commandes</th>
+          <th>Inscrit le</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of paginatedUsers">
+          <td>
+            <div class="user-cell">
+              <div class="user-avatar" [style.background]="getAvatarColor(user)">
+                {{ user.nomComplet.charAt(0) | uppercase }}
+              </div>
+              <div>
+                <span class="user-name">{{ user.nomComplet }} </span>
+                <span class="user-id">#{{ user.id }}</span>
+              </div>
+            </div>
+          </td>
+          <td class="text-muted">{{ user.email }}</td>
+          <td class="text-muted">{{ user.phone || '—' }}</td>
+          <td>
+            <span class="role-badge" [ngClass]="user.role">
+              <i class="fa-solid" [ngClass]="user.role === 'ADMIN' ? 'fa-shield-halved' : 'fa-user'"></i>
+              {{ user.role === 'ADMIN' ? 'Admin' : 'Client' }}
+            </span>
+          </td>
+          <td>
+            <span class="commande-count">
+              {{ user.commandes_count ?? 0 }}
+              <span class="count-label">cmd</span>
+            </span>
+          </td>
+          <td class="text-muted date-cell">{{ user.created_at | date:'dd/MM/yyyy' }}</td>
+          <td>
+            <div class="action-btns">
+              <button class="btn-action blue" (click)="openDetail(user)" title="Voir profil">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+              <button class="btn-action amber" (click)="openRoleModal(user)" title="Changer rôle">
+                <i class="fa-solid fa-user-pen"></i>
+              </button>
+              <button class="btn-action red" (click)="confirmDelete(user)" title="Supprimer"
+                [disabled]="user.role === 'admin'">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-state" *ngIf="filteredUsers.length === 0">
+      <i class="fa-solid fa-users"></i>
+      <p>Aucun utilisateur trouvé</p>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" *ngIf="totalPages > 1">
+    <button class="pg-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>
+    <button class="pg-btn" *ngFor="let p of pageNumbers"
+      [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+    <button class="pg-btn" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
+    <span class="pg-info">Page {{ currentPage }} / {{ totalPages }}</span>
+  </div>
+</div>
+
+<!-- ===== GRID VIEW ===== -->
+<div class="users-grid" *ngIf="viewMode === 'grid'">
+  <div class="user-card" *ngFor="let user of paginatedUsers">
+    <div class="user-card-header">
+      <div class="user-avatar lg" [style.background]="getAvatarColor(user)">
+        {{ user.nomComplet }}
+      </div>
+      <span class="role-badge" [ngClass]="user.role">
+        <i class="fa-solid" [ngClass]="user.role === 'admin' ? 'fa-shield-halved' : 'fa-user'"></i>
+        {{ user.role === 'admin' ? 'Admin' : 'Client' }}
+      </span>
+    </div>
+    <h3 class="user-card-name">{{ user.nomComplet }} </h3>
+    <p class="user-card-email">{{ user.email }}</p>
+    <p class="user-card-phone">
+      <i class="fa-solid fa-phone"></i>
+      {{ user.phone || 'Non renseigné' }}
+    </p>
+    <div class="user-card-stats">
+      <div class="ustat">
+        <span class="ustat-val">{{ user.commandes_count ?? 0 }}</span>
+        <span class="ustat-lbl">Commandes</span>
+      </div>
+      <div class="ustat-divider"></div>
+      <div class="ustat">
+        <span class="ustat-val">{{ user.created_at | date:'MM/yyyy' }}</span>
+        <span class="ustat-lbl">Inscription</span>
+      </div>
+    </div>
+    <div class="user-card-actions">
+      <button class="btn-action blue" (click)="openDetail(user)">
+        <i class="fa-solid fa-eye"></i> Profil
+      </button>
+      <button class="btn-action amber" (click)="openRoleModal(user)">
+        <i class="fa-solid fa-user-pen"></i>
+      </button>
+      <button class="btn-action red" (click)="confirmDelete(user)"
+        [disabled]="user.role === 'admin'">
+        <i class="fa-solid fa-trash"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     MODAL PROFIL UTILISATEUR
+================================================================ -->
+<div class="modal-overlay" [class.open]="showDetail" (click)="showDetail = false">
+  <div class="modal" (click)="$event.stopPropagation()" *ngIf="selectedUser">
+
+    <div class="modal-header">
+      <div>
+        <span class="modal-sub">Profil utilisateur</span>
+        <h2>{{ selectedUser.nomComplet }}*</h2>
+      </div>
+      <button class="modal-close" (click)="showDetail = false">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Infos personnelles -->
+      <div class="detail-section">
+        <div class="profile-top">
+          <div class="user-avatar xl" [style.background]="getAvatarColor(selectedUser)">
+            {{ selectedUser.nomComplet}}
+          </div>
+          <div>
+            <span class="role-badge lg" [ngClass]="selectedUser.role">
+              <i class="fa-solid" [ngClass]="selectedUser.role === 'admin' ? 'fa-shield-halved' : 'fa-user'"></i>
+              {{ selectedUser.role === 'admin' ? 'Administrateur' : 'Client' }}
+            </span>
+            <p class="profile-id">#{{ selectedUser.id }} — Inscrit le {{ selectedUser.created_at | date:'dd/MM/yyyy' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h4><i class="fa-solid fa-address-card"></i> Informations</h4>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Nom Complet</span>
+            <span class="detail-value">{{ selectedUser.nomComplet }}</span>
+          </div>
+          
+          <div class="detail-item">
+            <span class="detail-label">Email</span>
+            <span class="detail-value">{{ selectedUser.email }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Téléphone</span>
+            <span class="detail-value">{{ selectedUser.phone || '—' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Commandes -->
+      <div class="detail-section" *ngIf="selectedUser.commandes?.length">
+        <h4><i class="fa-solid fa-cart-shopping"></i> Commandes ({{ selectedUser.commandes?.length }})</h4>
+        <div class="commandes-list">
+          <div class="commande-row" *ngFor="let cmd of selectedUser.commandes">
+            <span class="cmd-id">#{{ cmd.id }}</span>
+            <span class="cmd-vehicle">{{ cmd.ligne_commandes?.[0]?.car?.nom ?? '—' }}</span>
+            <span class="cmd-amount">{{ cmd.montant_total | number:'1.0-0' }} Fr</span>
+            <span class="status-badge sm" [ngClass]="cmd.status">
+              {{ getStatusLabel(cmd.status) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-mini" *ngIf="!selectedUser.commandes?.length">
+        <i class="fa-solid fa-cart-shopping"></i>
+        Aucune commande pour cet utilisateur.
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="showDetail = false">Fermer</button>
+      <button class="btn-save" (click)="showDetail = false; openRoleModal(selectedUser)">
+        <i class="fa-solid fa-user-pen"></i> Modifier le rôle
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     MODAL CHANGEMENT RÔLE
+================================================================ -->
+<div class="modal-overlay" [class.open]="showRoleModal" (click)="showRoleModal = false">
+  <div class="modal modal--sm" (click)="$event.stopPropagation()" *ngIf="selectedUser">
+
+    <div class="modal-header">
+      <div>
+        <span class="modal-sub">{{ selectedUser.nomComplet }}</span>
+        <h2>Modifier le rôle</h2>
+      </div>
+      <button class="modal-close" (click)="showRoleModal = false">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="role-options">
+        <label class="role-option" [class.selected]="newRole === 'user'">
+          <input type="radio" [(ngModel)]="newRole" value="user" name="role" />
+          <div class="role-option-content">
+            <div class="role-icon user"><i class="fa-solid fa-user"></i></div>
+            <div>
+              <span class="role-option-label">Client</span>
+              <span class="role-option-desc">Accès à la boutique et ses commandes uniquement.</span>
+            </div>
+          </div>
+        </label>
+
+        <label class="role-option" [class.selected]="newRole === 'admin'">
+          <input type="radio" [(ngModel)]="newRole" value="admin" name="role" />
+          <div class="role-option-content">
+            <div class="role-icon admin"><i class="fa-solid fa-shield-halved"></i></div>
+            <div>
+              <span class="role-option-label">Administrateur</span>
+              <span class="role-option-desc">Accès complet au panneau d'administration.</span>
+            </div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="showRoleModal = false">Annuler</button>
+      <button class="btn-save" (click)="updateRole()" [class.loading]="isSaving">
+        <span *ngIf="!isSaving"><i class="fa-solid fa-floppy-disk"></i> Enregistrer</span>
+        <span *ngIf="isSaving" class="spinner"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     MODAL SUPPRESSION
+================================================================ -->
+<div class="modal-overlay" [class.open]="showDeleteModal" (click)="showDeleteModal = false">
+  <div class="modal modal--sm" (click)="$event.stopPropagation()">
+    <div class="delete-modal-body">
+      <div class="delete-icon">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h3>Supprimer cet utilisateur ?</h3>
+      <p>
+        <strong>{{ userToDelete?.nomComplet }} </strong>
+        et toutes ses données seront supprimés définitivement.
+      </p>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="showDeleteModal = false">Annuler</button>
+        <button class="btn-delete-confirm" (click)="deleteUser()" [class.loading]="isDeleting">
+          <span *ngIf="!isDeleting"><i class="fa-solid fa-trash"></i> Supprimer</span>
+          <span *ngIf="isDeleting" class="spinner"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" [class.show]="toast.show" [ngClass]="toast.type">
+  <i class="fa-solid"
+    [class.fa-circle-check]="toast.type === 'success'"
+    [class.fa-circle-exclamation]="toast.type === 'error'"></i>
+  {{ toast.message }}
+</div>
