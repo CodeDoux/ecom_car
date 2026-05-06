@@ -242,7 +242,11 @@ loadCars(): void {
   }
 
   getImageUrl(image: string): string {
-  return `${this.storageUrl}/${image}`;
+  // Si l'image est déjà une URL complète
+  if (image.startsWith('http')) return image;
+  
+  // Sinon ajoute le storageUrl
+  return `${this.storageUrl}${image}`;
 }
   // ── Scroll ──────────────────────────────────────────
   @HostListener('window:scroll', [])
