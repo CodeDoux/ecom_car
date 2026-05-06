@@ -121,7 +121,7 @@ export class CarAdminComponent {
 }
 
 getImageUrl(image: string): string {
-  return `${image}`;
+  return `${this.storageUrl}/${image}`;
 }
 
   // ── Filters ───────────────────────────────────────────
